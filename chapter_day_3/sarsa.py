@@ -8,7 +8,38 @@ class SARSAAgent(ELAgent):
     def __init__(sefl, epsilon=0.1):
         super().__init__(epsilon)
 
-    def learn(self, env, episode_count = 1000, gamme = 0.9,
-    learning_rate = 0.1. render = False, report_interval = 50):
-        self.init
+    def learn(self, env, episode_count = 1000, gamma = 0.9,
+    learning_rate = 0.1, render = False, report_interval = 50):
+        self.init_log()
+        self.Q = defaultdict(lambda: [0] * len(actions))
+        actions = list(range(env.action_space.n))
+        for e in range(episode_count):
+            s = env.reset()
+            done = False
+            a = self.policy(s, actions)
+            while not done:
+                if render:
+                    env.render()
+                n_state, reward, done, info = env.step(a)
 
+                n_action = self.policy(n_state, actions) # on-policy
+                gain = reward + gamma * self.Q[n_state][n_action]
+                estimated = self.Q[s][a]
+                self.Q[s][a] += learning_rate * (gain - estimated)
+                s = n_state
+                a = n_action
+            else:
+                self.log(reward)
+
+            if e != 0 and e % report_interval == 0:
+                self.show_reward_log(episode=e)
+
+def train():
+    agent = SARSAAgent()
+    env = gym.make("FrozenLakeEasy-v0")
+    agent.learn(env, episode_count=500)
+    show_q_value(agent.Q)
+    agent.show_reward_log()
+
+if __name__ == "__main__":
+    train()
